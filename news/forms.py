@@ -1,11 +1,17 @@
 from django import forms
 from django.core.exceptions import ValidationError
+from django_filters import ModelMultipleChoiceFilter
 
-from .models import Post
+from .models import Post, Category
 
 
 class PostForm(forms.ModelForm):
     text = forms.CharField(min_length=20)
+    category = ModelMultipleChoiceFilter(
+        field_name="post_category",
+        queryset=Category.objects.all(),
+        label="Category",
+    )
 
     class Meta:
         model = Post
@@ -14,6 +20,7 @@ class PostForm(forms.ModelForm):
             'post_rating',
             'heading',
             'text',
+            'post_category',
         ]
 
     def clean(self):

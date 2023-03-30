@@ -1,13 +1,15 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
+from django.core.mail import send_mail
+from django.db.models.signals import m2m_changed
+from django.dispatch import receiver
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
-
 from .forms import PostForm
-from .models import Post
-from datetime import datetime
+from .models import Post, PostCategory, Category
+from datetime import datetime, timedelta
 from .filters import PostFilter
 from django.http import HttpResponse
 
@@ -43,11 +45,11 @@ class DetailNews(LoginRequiredMixin, DetailView):
     template_name = 'new.html'
     context_object_name = 'new'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['is_not_sub'] = not (self.request.user.username in Category.objects.all().values("subscribers"))
+        return context
 
-# def post_filter(request):
-#     f = PostFilter(request.GET, queryset=Post.objects.all())
-#     return render(request, 'news_search.html', {'filter': f})
-#
 
 class NewsFilterList(LoginRequiredMixin, ListView):
     model = Post
@@ -96,7 +98,8 @@ class PostCreate(LoginRequiredMixin, CreateView, PermissionRequiredMixin):
         return super().form_valid(form)
 
 
-class ArticleCreate(LoginRequiredMixin, CreateView):
+class ArticleCreate(LoginRequiredMixin, CreateView, PermissionRequiredMixin):
+    permission_required = ('news.add_post',)
     form_class = PostForm
     # модель товаров
     model = Post
@@ -123,3 +126,42 @@ def upgrade_me(request):
     if not request.user.groups.filter(name='authors').exists():
         authors_group.user_set.add(user)
     return redirect('/')
+
+
+class CategoryDetail(LoginRequiredMixin, DetailView):
+    model = Category
+    template_name = 'category.html'
+    context_object_name = "cat"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        category = Category.objects.get(pk=self.kwargs['pk'])
+        context['cat'] = category
+        context['subs'] = category.subscribers.all()
+        return context
+
+
+@login_required
+def subscribe(request, pk):
+    category = Category.objects.get(pk=pk)
+    category.subscribers.add(request.user.id)
+    return redirect('/')
+
+
+def notify_subscribers_weekly():
+    all_posts_weekly = Post.objects.all().filter(published_date__range=[f"{datetime.now() - timedelta(days=7)}",
+                                                                        f"{datetime.now()}"])
+    categories = []
+    for post in all_posts_weekly:
+        categories.append(post.post_category.all().values("subscribers"))
+    for cat in categories:
+        for i in cat:
+            for k in i:
+                user = User.objects.get(pk=i[k])
+
+                send_mail(
+                    subject=f'Good day! There are interesting stuff happened!',
+                    message=f'UmpalumpaUmpalumpa Umpalumpa Post Error',
+                    from_email='imfyashya@yandex.ru',
+                    recipient_list=[f"{user.email}"]
+                )

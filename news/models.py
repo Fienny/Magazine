@@ -3,6 +3,7 @@ from django.contrib.auth.models import User, Group
 from django.db import models
 from django.urls import reverse
 from news.choices import CHOICES
+from simple_history.models import HistoricalRecords
 
 
 class Author(models.Model):
@@ -30,6 +31,11 @@ class Author(models.Model):
 
 class Category(models.Model):
     name = models.CharField(unique=True, max_length=255)
+    subscribers = models.ManyToManyField(User, related_name='categories')
+    history = HistoricalRecords()
+
+    def __str__(self):
+        return self.name.title()
 
 
 class Post(models.Model):
@@ -43,6 +49,7 @@ class Post(models.Model):
     heading = models.CharField(blank=False, unique=True, max_length=255)
     text = models.TextField(blank=False)
     post_rating = models.FloatField(default=0)
+    history = HistoricalRecords()
 
     def like(self):
         self.post_rating += 1.0
