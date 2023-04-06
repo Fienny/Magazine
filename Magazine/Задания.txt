@@ -1,0 +1,47 @@
+from news.models import Author, Category, Post, PostCategory, Comment
+from django.contrib.auth.models import User
+
+1) 	user_1 = User.objects.create_user('GoshaDudar')
+	user_2 = User.objects.create_user('HaudiHo')
+
+2)
+	author_1 = Author.objects.create(user=User(3))
+	author_2 = Author.objects.create(user=User(4))
+
+3)
+	cat_1 = Category.objects.create(name='Games')
+ 	cat_2 = Category.objects.create(name='World')
+ 	cat_3 = Category.objects.create(name='Ecology')
+ 	cat_4 = Category.objects.create(name='Economics')
+
+4-5)
+	article_1 = Post.objects.create(author=Author(3), choice="AR", heading="Economics article", text="aaaaaa")
+ 	article_1.post_category.add(cat_4)
+ 	article_2 = Post.objects.create(author=Author(4), choice="AR", heading="World article", text="bbbbbbb")
+ 	article_2.post_category.add(cat_2)
+ 	news_1 = Post.objects.create(author=Author(3), choice="NW", heading="Games news", text="cccccccc")
+ 	news_1.post_category.add(cat_1)
+
+6)
+	comment_1 = Comment.objects.create(post_comment=Post(4), user_comment=User(4), comment_text="Ploxoochen")
+	comment_2 = Comment.objects.create(post_comment=Post(3), user_comment=User(3), comment_text="Ploxoochen")
+	comment_3 = Comment.objects.create(post_comment=Post(1), user_comment=User(1), comment_text="Ploxoochen")
+	comment_4 = Comment.objects.create(post_comment=Post(2), user_comment=User(2), comment_text="Ploxoochen")
+7)
+	article_1.like()
+	article_1.like()
+	article_2.like()
+	article_2.like()
+	article_2.like()
+	news_1.like()
+8)
+	author_1.update_rating()
+	author_2.update_rating()
+9)
+	Author.objects.all().order_by('-author_rating').values('user')[0]
+	User.objects.get(pk=3)
+10)
+	Post.objects.all().order_by('-post_rating').values('author', 'post_rating', 'heading')[0]
+	Post.objects.get(pk=2).preview()
+11)
+	Comment.objects.filter(post_comment=Post(2)).values('user_comment', 'comment_text', 'comment_date', 'comment_rating')
