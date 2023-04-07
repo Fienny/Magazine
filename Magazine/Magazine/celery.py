@@ -9,7 +9,7 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 
 app.conf.beat_schedule = {
     'clear_board_every_minute': {
-        'task': 'board.tasks.notify_subscribers_weekly',
+        'task': 'news.tasks.notify_subscribers_weekly',
         'schedule': crontab(hour=8, minute=0, day_of_week='monday'),
     },
 }
